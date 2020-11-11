@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Atmel Studio Solution File, Format Version 11.00
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "Controler", "Controler\Controler.cppproj", "{DCE6C7E3-EE26-4D79-826B-08594B9AD897}"
+EndProject
+Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "ADC_Test", "ADC_Test\ADC_Test.cppproj", "{8B5A36B1-3038-4826-9680-A735415D9EAB}"
+EndProject
+Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "GyroMotorControler", "GyroMotorControler\GyroMotorControler.cppproj", "{30116323-504A-4056-9733-9349D147B12C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Debug|AVR.ActiveCfg = Debug|AVR
+		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Debug|AVR.Build.0 = Debug|AVR
+		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Release|AVR.ActiveCfg = Release|AVR
+		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Release|AVR.Build.0 = Release|AVR
+		{8B5A36B1-3038-4826-9680-A735415D9EAB}.Debug|AVR.ActiveCfg = Debug|AVR
+		{8B5A36B1-3038-4826-9680-A735415D9EAB}.Debug|AVR.Build.0 = Debug|AVR
+		{8B5A36B1-3038-4826-9680-A735415D9EAB}.Release|AVR.ActiveCfg = Release|AVR
+		{8B5A36B1-3038-4826-9680-A735415D9EAB}.Release|AVR.Build.0 = Release|AVR
+		{30116323-504A-4056-9733-9349D147B12C}.Debug|AVR.ActiveCfg = Debug|AVR
+		{30116323-504A-4056-9733-9349D147B12C}.Debug|AVR.Build.0 = Debug|AVR
+		{30116323-504A-4056-9733-9349D147B12C}.Release|AVR.ActiveCfg = Release|AVR
+		{30116323-504A-4056-9733-9349D147B12C}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

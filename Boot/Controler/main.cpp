@@ -1,5 +1,5 @@
 /*
- * Controler for manaaging my boat with a joystick
+ * PwGenerator
  * main.cpp
  *
  * Testapplication for SerialInterface class
@@ -16,6 +16,7 @@
 #include "PwGenerator.h"
 #include "StickReader.h"
 #include "MotorControler.h"
+#include "KeysReader.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
@@ -24,6 +25,7 @@ SerialInterface serialInterface;
 PwGenerator pwGenerator;
 StickReader stickReader;
 MotorControler motorControler;
+KeysReader keysReader;
 int iEvaluationCounter;
 
 void echo() {
@@ -97,37 +99,67 @@ class Application {
 		motorControler.Initialize();
 		serialInterface.Initialize();
 		stickReader.Initialize();
+		keysReader.Initialize();
 		iEvaluationCounter = 0;
 
 		// Say hello
 		char strptr[50];
-		sprintf (strptr, "Started ADC Controler\n\r");
+		sprintf (strptr, "Started ADC Controler %d %d %d\n\r",1 << PIND0,1 << PIND6, 1 << PIND7);
 		serialInterface.SendString(strptr);
 
 		BlinkThreeTimes();
 
 		// Go to main Loop		
-		int iReportingCounter;
-		iReportingCounter = 0;
+		int iReportingCounter = 0;
+		int iEvaluationThreshold = 10;
+		int iBlinkCounter = 8;		
 		while (true) {
-			iReportingCounter += 1;	
+						   
 			echo();
 			stickReader.ReadADC();
-			if (iEvaluationCounter > 10) {
+			keysReader.ReadKeys();
+			if (iEvaluationCounter > iEvaluationThreshold) {
 				iEvaluationCounter = 0;
+				if (iBlinkCounter-- > 0) {
+					PORTB ^= 0x01; // ^ XOR Operator
+					iBlinkCounter = 8;				
+				}
 				motorControler.Evaluate(stickReader.StickX,stickReader.StickY);
+			}
+			
+			if (keysReader.bSwitchDownChange) {
+				keysReader.bSwitchDownChange = false;
+				if((keysReader.bSwitchDownPressed==true) & (iEvaluationThreshold < 30)) iEvaluationThreshold++;
+ 			}
+			if (keysReader.bSwitchUpChange) {
+				keysReader.bSwitchUpChange = false;
+				if((keysReader.bSwitchUpPressed==true) & (iEvaluationThreshold > 2)) iEvaluationThreshold--;
 			}
 			
 			// positive Value always moves forward
 			pwGenerator.PwValues[0] = motorControler.PwValueLeft;
 			pwGenerator.PwValues[1] = motorControler.PwValueRight;
 
-			if (iReportingCounter == 1000) {
+			iReportingCounter += 1;
+			if (iReportingCounter == 2500) {
 				iReportingCounter = 0;
-				// sprintf (strptr, "ADC: X %d Y %d\n\r", stickReader.StickX, stickReader.StickY);
-				sprintf (strptr, "PW: L %d R %d D %d\n\r", motorControler.PwValueLeft, motorControler.PwValueRight, motorControler.Direction);
-				serialInterface.SendString(strptr);				
+				// alt sprintf (strptr, "ADC: X %d Y %d\n\r", stickReader.StickX, stickReader.StickY);
+				sprintf (strptr, "PW: L %3d R %3d D %2d T %2d\r", motorControler.PwValueLeft, motorControler.PwValueRight, motorControler.Direction,iEvaluationThreshold);
+				serialInterface.SendString(strptr);
 			}
+
+			//if (keysReader.bSwitchUpChange){
+				//keysReader.bSwitchUpChange = false;
+				//if (keysReader.bSwitchUpPressed) sprintf (strptr, "Up Pressed\n\r");
+				//else sprintf (strptr, "Up Released\n\r");
+				//serialInterface.SendString(strptr);
+			//}			
+			//if (keysReader.bSwitchDownChange){
+				//keysReader.bSwitchDownChange = false;
+				//if (keysReader.bSwitchDownPressed) sprintf (strptr, "Down Pressed\n\r");
+				//else sprintf (strptr, "Down Released\n\r");
+				//serialInterface.SendString(strptr);
+			//}			
 		}
 	}
 } app;

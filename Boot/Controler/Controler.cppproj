@@ -195,6 +195,12 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="KeysReader.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KeysReader.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.cpp">
       <SubType>compile</SubType>
     </Compile>

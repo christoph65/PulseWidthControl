@@ -28,7 +28,7 @@ public:
 
 	int8_t PwValueRight;
 	int8_t PwValueLeft;	
-	int Direction;
+	int8_t Direction;
 	
 }; //MotorControler
 

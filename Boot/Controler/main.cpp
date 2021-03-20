@@ -2,14 +2,17 @@
  * PwGenerator
  * main.cpp
  *
- * Testapplication for SerialInterface class
+ * Main Application for controling the two motors of a boat with an 
+ * analog Joystick.
  *
  * For Putty: don't forget to turn xon/xoff off (see settings for serial)
  *
  *  Created on: 16.12.2012
  *  Updated on: 02.01.2018 to make it work
- *  Updaten on: 07.12.2019 adaption for Arduino Nano
- *      Author: Christoph Kunz
+ *  Updated on: 07.12.2019 adaption for Arduino Nano
+ *  Updated on: 26.02.2021 adpation for Serial Interface to Raspberry Pi
+ *
+ *      Author: Christoph Kunz, Munich/Krailling, Germany
  */
 
 #include "SerialInterface.h"

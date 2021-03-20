@@ -1,19 +1,25 @@
 /*
- * EcuSubmarine
+ * GyroMotorControler and ManualMotorControler
  * main.cpp
  *
- * Testapplication for CommandInterpreter class
+ * This application is for controlling a boat with two motors (left/right)
+ * - one input is over a joystick with two inputkey
+ * - one input is over the serial port where an ECU with Gyro is connected
  *
  * For Putty: don't forget to turn xon/xoff off (see settings for serial)
  *
  *  Created on: 30.03.2013
- *  Updated on: 03.01.2018
- *      Author: Christoph Kunz
+ *  Updated on: 26.02.2021
+ *
+ *      Author: Christoph Kunz, Munich/Krailling, Germany
  */
 
 #include "SerialInterface.h"
 #include "CommandInterpreter.h"
 #include "PwGenerator.h"
+#include "StickReader.h"
+#include "MotorControler.h"
+#include "KeysReader.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
@@ -21,6 +27,10 @@
 SerialInterface serialInterface;
 CommandInterpreter commandInterpreter;
 PwGenerator pwGenerator;
+StickReader stickReader;
+MotorControler motorControler;
+KeysReader keysReader;
+int iEvaluationCounter;
 
 // The real application
 //
@@ -92,7 +102,7 @@ class Application {
 
 		serialInterface.Initialize();
 		char strptr[50];
-		sprintf (strptr, "Started Submarine Neu Ganzes 01052020\n\r");
+		sprintf (strptr, "Started Submarine Neu 28022021\r\n");
 		serialInterface.SendString(strptr);
 		
 		BlinkThreeTimes();
@@ -105,7 +115,12 @@ class Application {
 			pwGenerator.PwAdjustValues[i] = 0;
 		}
 		pwGenerator.Initialize();
+		stickReader.Initialize();
+		motorControler.Initialize();
+		keysReader.Initialize();
+		iEvaluationCounter = 0;
 		
+				
 		// command Interpreter Initialize
 		commandInterpreter.Inject(pwGenerator.PwValues, pwGenerator.PwAdjustValues);
 		commandInterpreter.InterpretState = STATE_WAITCOMMAND;
@@ -117,9 +132,7 @@ class Application {
 
 		char readChar;
 		readChar = 0;
-		// char debugChar;
-		bool enteredWaitMode;
-		enteredWaitMode = false;
+
 
 
 		// Todo - test adjustment command
@@ -128,51 +141,39 @@ class Application {
 		// always coming back to STATE_WAITCOMMAND, then send ">".
 		// Will be executed with the "Enter"-Button
 		// to finish wrong Input - Press "Enter"
+		
+		bool GyroActiveBool = false;
+		int iEvaluationThreshold = 30;
+		int iBlinkCounter = 8;
+				
 		while (true) {
 			
-			
-			
-			// Left ist 0
-			// Right ist 1
-			
+			stickReader.ReadSwitches();
+			keysReader.ReadKeys();
 			serialInterface.Cyclic();
-			if (serialInterface.GetChar(&readChar)) {
-				
-				// send echo
-				// if (readChar == '\r') serialInterface.SendChar('\n');  // only for use with a terminal
-				serialInterface.SendChar(readChar);
-				
-				// interpret Char
-				commandInterpreter.Interpret(readChar);
-				if (commandInterpreter.InterpretState == STATE_WAITCOMMAND) {
-					// for terminal use
-					sprintf (strptr, "\r\n>");
-					serialInterface.SendString(strptr);
-					
-					// debug start
-					//if (enteredWaitMode == true) {
-						//enteredWaitMode = false;
-						//sprintf (strptr, "Channel %d : %d \r\n", commandInterpreter.setcvChannel + 1, pwGenerator.PwValues[commandInterpreter.setcvChannel]);
-						//serialInterface.SendString(strptr);
-						//sprintf (strptr, "Adjust %d : %i \r\n", commandInterpreter.setavChannel + 1, pwGenerator.PwAdjustValues[commandInterpreter.setavChannel]);
-						//serialInterface.SendString(strptr);
-						//
-						//serialInterface.Cyclic();
-						////serialInterface.SendChar('\r');
-						////serialInterface.SendChar('\n');
-						//sprintf (strptr, ">");
-						//serialInterface.SendString(strptr);
-					//}
-					// debug end
-				} 
-				//debug start 
-				else {
-					enteredWaitMode = true;
-					//debugChar = '0' + commandInterpreter.InterpretState;
-					//serialInterface.SendChar(debugChar);
+			
+			if (GyroActiveBool)	{
+				if (serialInterface.GetChar(&readChar)) {
+					serialInterface.SendChar(readChar); //echo
+					commandInterpreter.Interpret(readChar);
+					if (commandInterpreter.InterpretState == STATE_WAITCOMMAND) {
+						// for terminal use
+						sprintf (strptr, "\r\n>");
+						serialInterface.SendString(strptr);
+					}			
 				}
-				// debug end
-				
+			} else {
+				if (iEvaluationCounter > iEvaluationThreshold) {
+					iEvaluationCounter = 0;
+					if (iBlinkCounter-- > 0) {
+						PORTB ^= 0x01; // ^ XOR Operator
+						iBlinkCounter = 8;
+					}
+					motorControler.Evaluate(stickReader.StickX,stickReader.StickY);
+				}
+				// positive Value always moves forward
+				pwGenerator.PwValues[0] = motorControler.PwValueLeft;
+				pwGenerator.PwValues[1] = motorControler.PwValueRight;
 			}
 		}
 	}
@@ -184,6 +185,8 @@ extern "C" {
 	{
 		pwGenerator.TimerInterrupt();
 		//serialInterface.SendChar('i');
+		iEvaluationCounter += 1;
+
 	}
 }
 
@@ -192,3 +195,77 @@ int main(void)
 	app.MyMain();
 }
 
+// after reading stick or keys
+			//if (stickReader.bSwitchForwardChange){
+				//stickReader.bSwitchForwardChange = false;
+				//sprintf (strptr, "\r\nf");
+				//serialInterface.SendString(strptr);
+				//
+			//}
+			//if (stickReader.bSwitchBackwardChange){
+				//stickReader.bSwitchBackwardChange = false;
+				//sprintf (strptr, "\r\nb");
+				//serialInterface.SendString(strptr);
+				//
+			//}
+			//if (stickReader.bSwitchLeftChange){
+				//stickReader.bSwitchLeftChange = false;
+				//sprintf (strptr, "\r\nl");
+				//serialInterface.SendString(strptr);
+				//
+			//}
+			//if (stickReader.bSwitchRightChange){
+				//stickReader.bSwitchRightChange = false;
+				//sprintf (strptr, "\r\nr");
+				//serialInterface.SendString(strptr);
+				//
+			//}
+			//
+			//if (keysReader.bSwitchDownChange){
+				//keysReader.bSwitchDownChange = false;
+				//sprintf (strptr, "\r\nd");
+				//serialInterface.SendString(strptr);
+				//
+			//}
+			//if (keysReader.bSwitchUpChange){
+				//keysReader.bSwitchUpChange = false;
+				//sprintf (strptr, "\r\nu");
+				//serialInterface.SendString(strptr);
+				//
+			//}
+//
+
+
+
+// for debugging of commandinterpreter
+
+		//// char debugChar;
+		//bool enteredWaitMode;
+		//enteredWaitMode = false;
+				//if (commandInterpreter.InterpretState == STATE_WAITCOMMAND) {
+					//// for terminal use
+					//sprintf (strptr, "\r\n>");
+					//serialInterface.SendString(strptr);
+// debug code should come now
+					// debug start
+					//if (enteredWaitMode == true) {
+					//enteredWaitMode = false;
+					//sprintf (strptr, "Channel %d : %d \r\n", commandInterpreter.setcvChannel + 1, pwGenerator.PwValues[commandInterpreter.setcvChannel]);
+					//serialInterface.SendString(strptr);
+					//sprintf (strptr, "Adjust %d : %i \r\n", commandInterpreter.setavChannel + 1, pwGenerator.PwAdjustValues[commandInterpreter.setavChannel]);
+					//serialInterface.SendString(strptr);
+					//
+					//serialInterface.Cyclic();
+					////serialInterface.SendChar('\r');
+					////serialInterface.SendChar('\n');
+					//sprintf (strptr, ">");
+					//serialInterface.SendString(strptr);
+					//}
+					// debug end
+				////debug start
+				//else {
+				//enteredWaitMode = true;
+				////debugChar = '0' + commandInterpreter.InterpretState;
+				////serialInterface.SendChar(debugChar);
+				//}
+				//// debug end

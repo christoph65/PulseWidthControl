@@ -4,9 +4,15 @@
 
 CommandInterpreter.cpp
 
+KeysReader.cpp
+
 main.cpp
+
+MotorControler.cpp
 
 PwGenerator.cpp
 
 SerialInterface.cpp
+
+StickReader.cpp
 

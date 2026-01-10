@@ -1,0 +1,9 @@
+{
+  "folders": [
+    { "path": "." },
+    { "path": "projects/Controler" },
+    { "path": "projects/GyroMotorControler" },
+    { "path": "experiments/ADC_Test" }
+  ],
+  "settings": {}
+}

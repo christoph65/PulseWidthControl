@@ -1,0 +1,17 @@
+# Ignore build output directories for all projects
+**/Debug/
+**/Release/
+
+# Ignore common build artifacts
+**/*.hex
+**/*.elf
+**/*.eep
+**/*.lss
+**/*.o
+
+# Visual Studio Code settings
+.vscode/
+
+# Other OS files
+Thumbs.db
+.DS_Store

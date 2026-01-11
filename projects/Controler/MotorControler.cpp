@@ -9,7 +9,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
-#include <stdint-gcc.h>
+#include <stdint.h>
 
 #define defDirMiddle 0
 #define defDirRight 1

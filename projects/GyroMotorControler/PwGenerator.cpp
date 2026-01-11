@@ -1,4 +1,4 @@
-﻿/*
+/*
  * PwGenerator.cpp
  *
  *  Created on: 13.01.2013

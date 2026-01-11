@@ -1,0 +1,69 @@
+name: AVR Flash (GyroMotorControler)
+
+# NOTE: This workflow MUST run on a self-hosted runner with access to the serial port
+# (for example: a Windows self-hosted runner that has WinAVR/avrdude in PATH and COM5 available).
+
+on:
+  workflow_dispatch:
+    inputs:
+      programmer:
+        description: 'avrdude programmer (e.g. stk500v2)'
+        required: true
+        default: 'stk500v2'
+      mcu:
+        description: 'MCU (e.g. m328p)'
+        required: true
+        default: 'm328p'
+      port:
+        description: 'Serial port (e.g. COM5)'
+        required: true
+        default: 'COM5'
+      baud:
+        description: 'Baud rate'
+        required: true
+        default: '57600'
+      hexpath:
+        description: 'Optional: path to .hex to flash (if empty workflow will build)'
+        required: false
+
+jobs:
+  flash:
+    runs-on: [self-hosted, windows]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check avrdude availability
+        shell: powershell
+        run: |
+          if (-not (Get-Command avrdude -ErrorAction SilentlyContinue)) {
+            Write-Error "avrdude not found in PATH on this runner. Please install avrdude (e.g. WinAVR) and ensure it is in PATH."
+            exit 1
+          }
+          avrdude -v
+      - name: Build firmware (if no hex provided)
+        if: ${{ !github.event.inputs.hexpath }}
+        shell: powershell
+        run: |
+          Write-Host "No hex path provided — building project in projects/GyroMotorControler..."
+          cd projects/GyroMotorControler
+          make
+      - name: Find hex file
+        shell: powershell
+        id: findhex
+        run: |
+          if ($env:GITHUB_EVENT_INPUT_HEXPATH) {
+            $hex = $env:GITHUB_EVENT_INPUT_HEXPATH
+          } else {
+            $hexCandidates = Get-ChildItem -Path projects/GyroMotorControler -Filter *.hex -Recurse | Select-Object -ExpandProperty FullName
+            if (-not $hexCandidates) {
+              Write-Error "No .hex file found in projects/GyroMotorControler. Ensure build step produced a .hex or provide hexpath input."
+              exit 1
+            }
+            $hex = $hexCandidates[0]
+          }
+          echo "::set-output name=hex::$hex"
+      - name: Flash firmware with avrdude
+        shell: powershell
+        run: |
+          $hex = '${{ steps.findhex.outputs.hex }}'
+          Write-Host "Flashing $hex to port ${{ github.event.inputs.port }} (programmer ${{ github.event.inputs.programmer }}, mcu ${{ github.event.inputs.mcu }}, baud ${{ github.event.inputs.baud }})"
+          avrdude -c ${{ github.event.inputs.programmer }} -p ${{ github.event.inputs.mcu }} -P ${{ github.event.inputs.port }} -b ${{ github.event.inputs.baud }} -U flash:w:$hex:i

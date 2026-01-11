@@ -1,0 +1,30 @@
+name: AVR Build (GyroMotorControler)
+
+on:
+  push:
+    paths:
+      - 'projects/GyroMotorControler/**'
+  pull_request:
+    paths:
+      - 'projects/GyroMotorControler/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install AVR toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-avr binutils-avr avr-libc make
+      - name: Strip BOMs from sources
+        run: |
+          # remove UTF-8 BOM if present (works on Linux runners)
+          find projects/GyroMotorControler -type f \( -name '*.cpp' -o -name '*.h' \) -exec sed -i '1s/^\xEF\xBB\xBF//' {} +
+      - name: Build firmware
+        run: make -C projects/GyroMotorControler
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gyro-firmware
+          path: projects/GyroMotorControler/*.hex

@@ -1,4 +1,6 @@
-## OpenFishPilot – Hands-Free Boat Steering for Anglers
+<p align="center"> <img src="assets/Logo.png" alt="OpenFishPilot logo" width="600" /> </p>
+
+### OpenFishPilot – Hands-Free Boat Steering for Anglers
 
 OpenFishPilot is an open-source embedded boat steering system designed for anglers using small inflatable boats who want precise control, stable heading, and hands-free operation while fishing.
 

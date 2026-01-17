@@ -51,7 +51,7 @@ void echo() {
 
 void BlinkThreeTimes()
 {
-	// Wake up Signal über die LED (3 mal blinken)
+	// Wake up Signal ï¿½ber die LED (3 mal blinken)
 	// Erster Test ob es denn wirklich flasht
 	// Drive Servo to left and then to right
 	DDRB |= 0x01;

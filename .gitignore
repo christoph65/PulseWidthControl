@@ -7,6 +7,7 @@
 **/*.elf
 **/*.eep
 **/*.lss
+**/*.bkp
 **/*.o
 
 # Visual Studio Code settings

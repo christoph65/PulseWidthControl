@@ -1,4 +1,4 @@
-name: AVR Flash (GyroMotorControler)
+name: AVR Flash (MotorControler)
 
 # NOTE: This workflow MUST run on a self-hosted runner with access to the serial port
 # (for example: a Windows self-hosted runner that has WinAVR/avrdude in PATH and COM5 available).
@@ -43,8 +43,8 @@ jobs:
         if: ${{ !github.event.inputs.hexpath }}
         shell: powershell
         run: |
-          Write-Host "No hex path provided — building project in projects/GyroMotorControler..."
-          cd projects/GyroMotorControler
+          Write-Host "No hex path provided — building project in projects/MotorControler..."
+          cd projects/MotorControler
           make
       - name: Find hex file
         shell: powershell
@@ -53,9 +53,9 @@ jobs:
           if ($env:GITHUB_EVENT_INPUT_HEXPATH) {
             $hex = $env:GITHUB_EVENT_INPUT_HEXPATH
           } else {
-            $hexCandidates = Get-ChildItem -Path projects/GyroMotorControler -Filter *.hex -Recurse | Select-Object -ExpandProperty FullName
+            $hexCandidates = Get-ChildItem -Path projects/MotorControler -Filter *.hex -Recurse | Select-Object -ExpandProperty FullName
             if (-not $hexCandidates) {
-              Write-Error "No .hex file found in projects/GyroMotorControler. Ensure build step produced a .hex or provide hexpath input."
+              Write-Error "No .hex file found in projects/MotorControler. Ensure build step produced a .hex or provide hexpath input."
               exit 1
             }
             $hex = $hexCandidates[0]

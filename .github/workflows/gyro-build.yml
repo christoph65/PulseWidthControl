@@ -1,12 +1,12 @@
-name: AVR Build (GyroMotorControler)
+name: AVR Build (MotorControler)
 
 on:
   push:
     paths:
-      - 'projects/GyroMotorControler/**'
+      - 'projects/MotorControler/**'
   pull_request:
     paths:
-      - 'projects/GyroMotorControler/**'
+      - 'projects/MotorControler/**'
 
 jobs:
   build:
@@ -20,11 +20,11 @@ jobs:
       - name: Strip BOMs from sources
         run: |
           # remove UTF-8 BOM if present (works on Linux runners)
-          find projects/GyroMotorControler -type f \( -name '*.cpp' -o -name '*.h' \) -exec sed -i '1s/^\xEF\xBB\xBF//' {} +
+          find projects/MotorControler -type f \( -name '*.cpp' -o -name '*.h' \) -exec sed -i '1s/^\xEF\xBB\xBF//' {} +
       - name: Build firmware
-        run: make -C projects/GyroMotorControler
+        run: make -C projects/MotorControler
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
           name: gyro-firmware
-          path: projects/GyroMotorControler/*.hex
+          path: projects/MotorControler/*.hex

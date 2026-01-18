@@ -1,9 +1,9 @@
-# Makefile for GyroMotorControler (moved to projects/GyroMotorControler)
+# Makefile for MotorControler (moved to projects/MotorControler)
 # Defaults (can be overridden on make command line)
 MCU ?= atmega328p
 AVRDUDE_MCU ?= m328p
 F_CPU ?= 16000000UL
-TARGET ?= GyroMotorControler
+TARGET ?= MotorControler
 
 CXX := avr-g++
 OBJCOPY := avr-objcopy

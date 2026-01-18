@@ -2,7 +2,7 @@
   "folders": [
     { "path": "." },
     { "path": "projects/Controler" },
-    { "path": "projects/GyroMotorControler" },
+    { "path": "projects/MotorControler" },
     { "path": "experiments/ADC_Test" }
   ],
   "settings": {}

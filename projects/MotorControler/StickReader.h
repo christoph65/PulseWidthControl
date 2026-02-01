@@ -36,6 +36,9 @@ class StickReader {
 	void ReadSwitches();
 	bool bValueChange;
 	
+	// this are historical values
+	// used for an analog stick, but now changed to switches
+	
 	// Both Values between -127 and 128
 	// Both Values like in X,Y coordination system like normal algebra function
 	// the threshold is above 20 to react

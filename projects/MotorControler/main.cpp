@@ -148,7 +148,7 @@ class Application {
 		const int constBlinkHighLightCounterOn 			= 8;
 
 		iEvaluationCounter = 0;
-		int iEvaluationThreshold = 30;
+		int iEvaluationThreshold = 5;
 		iDownButtonCounter = 0;
 		int iDownButtonThreshold = 100;
 
@@ -178,12 +178,14 @@ class Application {
 			if (keysReader.bSwitchUpChange == true && keysReader.bSwitchUpPressed == true) {
 				iActualState = constSTATE_Stop;
 				keysReader.bSwitchUpChange = false;
-				sprintf (strptr, "\r\nEntering Stop Mode\r\n");
+				sprintf (strptr, "\r\nStpMde\r\n");
 				serialInterface.SendString(strptr);				
-					stickReader.bValueChange = false; // prepare to detect stick movement
-					// stop the motors
-					pwGenerator.PwValues[0] = 0;
-					pwGenerator.PwValues[1] = 0;
+				stickReader.bValueChange = false; // prepare to detect stick movement
+				// stop the motors
+				pwGenerator.PwValues[0] = 0;
+				pwGenerator.PwValues[1] = 0;
+				motorControler.PwValueLeft = 0;
+				motorControler.PwValueRight = 0;
 			}
 
 			// Goto state specific code
@@ -193,8 +195,9 @@ class Application {
 					// any stick button pressed goto Manual Mode
 					if (stickReader.bValueChange == true) {
 						iActualState = constSTATE_ManualMode;
+						iEvaluationCounter = 0;
 						// stickReader.bValueChange = false;
-						sprintf (strptr, "\r\nFrom Stop to Manual Mode\r\n");
+						sprintf (strptr, "\r\nStp2ManMde\r\n");
 						serialInterface.SendString(strptr);
 					}
 					if (iDelayCounter-- > 0) {
@@ -219,15 +222,18 @@ class Application {
 					// must be pressed -> then iDownButtonCounter counts up
 					// when released before threshold -> go to External Mode
 					if (keysReader.bSwitchDownChange == true && keysReader.bSwitchDownPressed == true) {
-						// button pressed
+						// button pressed and start counting
 						iDownButtonCounter = 0;
 						keysReader.bSwitchDownChange = false;
 					} else {
 						if (keysReader.bSwitchDownPressed == true) {
-							// button still pressed
+							// button still pressed so count up
 							iDownButtonCounter += 1;
 						}
 					}
+
+					// Bottom Button short -> go to External Mode
+					// when released before threshold -> go to External Mode
 					if (iDownButtonCounter < iDownButtonThreshold && keysReader.bSwitchDownChange == true) {
 						// check if button released
 						if (keysReader.bSwitchDownPressed == false) {
@@ -236,7 +242,7 @@ class Application {
 							iActualState = constSTATE_ExternalMode;
 							keysReader.bSwitchDownChange = false;
 							stickReader.bValueChange = false;
-							sprintf (strptr, "\r\nEntering External Mode\r\n");
+							sprintf (strptr, "\r\nManMde2ExtMde\r\n");
 							serialInterface.SendString(strptr);
 						}
 					}
@@ -255,7 +261,7 @@ class Application {
 							bLedStateOn = false;							
 							keysReader.bSwitchDownChange = false;
 							stickReader.bValueChange = false;
-							sprintf (strptr, "\r\nFrom manual mode to Quitting Sensitivity Change\r\n");
+							sprintf (strptr, "\r\nManMde2QuitSensChnge\r\n");
 							serialInterface.SendString(strptr);
 						}
 					}
@@ -281,6 +287,7 @@ class Application {
 						if (stickReader.bValueChange == true	) {
 							stickReader.bValueChange = false;
 							motorControler.Evaluate(stickReader.StickX,stickReader.StickY);
+						}
 					}
 					// positive Value always moves forward
 					pwGenerator.PwValues[0] = motorControler.PwValueLeft;

@@ -64,64 +64,93 @@ void MotorControler::Evaluate(int8_t stickX, int8_t stickY)
 		case defDirMiddle:
 			// nichts machen
 			break;
+
 		case defDirForward: 
-			// In the direction as it is accelarating
-			// If one reaches limit, then don't extend
-			if ((PwValueLeft >= 122) | (PwValueRight >= 122)) 
-				break; // do nothing
-			else {
-				PwValueRight += 1;
-				PwValueLeft += 1;
-			}
+			// Keep direction as it is accelarating. Means difference between both motors stays constant
+			// If one reaches limit, then turn by also increasing other motor
+			if (PwValueRight < 122) PwValueRight += 1;
+			if (PwValueLeft < 122) PwValueLeft += 1;
 			break;
+
 		case defDirLeft: 
 			// left Motor more forward, right motor more reduced till one reaches end
-			if ((PwValueRight >= 122) | (PwValueLeft <= -121))
-				break; // do nothing
-			else {
-				PwValueRight += 1;
-				PwValueLeft -= 1;
-			}
+			if (PwValueRight < 122) PwValueRight += 1;
+			if (PwValueLeft > -121) PwValueLeft -= 1;
 			break;
+
 		case defDirRight:
 			// left Motor more forward, right motor more reduced till one reaches end
-			if ((PwValueRight <= -121) | (PwValueLeft >= 122))
-				break; // do nothing
-			else {
-				PwValueRight -= 1;
-				PwValueLeft += 1;
-			}
+			if (PwValueRight > -121) PwValueRight -= 1;
+			if (PwValueLeft < 122) PwValueLeft += 1;
 			break;
+
 		case defDirBackward:
-			// both motor more reduced till one reaches end
-			if ((PwValueRight <= -121) | (PwValueLeft <= -121))
-				break; // do nothing
-			else {
-				PwValueRight -= 1;
-				PwValueLeft -= 1;
-			}
+			// Keep direction as it is accelarating. Means difference between both motors stays constant
+			// If one reaches limit, then turn by also increasing other motor
+			// But in backward direction	
+			if (PwValueRight > -121) PwValueRight -= 1;
+			if (PwValueLeft > -121) PwValueLeft -= 1;
 			break;
+
 		case defDirLeftForward:
-			// Only accelerating right Motor
+			// Increase right motor stronger but also accelerate left motor
+			// When maximus is reached of right motor, then only declerate left motor
 			if ( PwValueRight < 122)
 				PwValueRight += 1;
-			break; 
-		case defDirRightForward:
-			// Only accelerating left Motor
-			if ( PwValueLeft < 122)
-				PwValueLeft += 1;
-			break;
-		case defDirLeftBackward:
-			// Only reducing right Motor
-			if ( PwValueRight > -121)
-				PwValueRight -= 1;
-			break;
-		case defDirRightBackward:
-			// Only reducing left Motor
-			if ( PwValueLeft > -121)
-				PwValueLeft -= 1;
+			if ( PwValueRight < 122)
+				PwValueRight += 1;
+			if ( PwValueRight < 122) {
+				if (PwValueLeft < 122) PwValueLeft += 1;
+			} else {
+				// right motor at maximum, now decelerate left motor
+				if (PwValueLeft > -121) PwValueLeft -= 1;
+			}
 			break;
 			
+		case defDirRightForward:
+			// Increase left motor stronger but also accelerate right motor
+			// When maximus is reached of left motor, then only declerate right motor
+			if ( PwValueLeft < 122)
+				PwValueLeft += 1;
+			if ( PwValueLeft < 122)
+				PwValueLeft += 1;
+			if ( PwValueLeft < 122) {
+				if (PwValueRight < 122) PwValueRight += 1;
+			} else {
+				// left motor at maximum, now decelerate right motor
+				if (PwValueRight > -121) PwValueRight -= 1;
+			}
+			break;
+
+		case defDirLeftBackward:
+			// decelerate left motor stronger but also decelerate right motor
+			// When minimum is reached of left motor, then only accelerate right motor	
+			if ( PwValueLeft > -121)
+				PwValueLeft -= 1;	
+			if ( PwValueLeft > -121)
+				PwValueLeft -= 1;	
+			if ( PwValueLeft > -121) {
+				if (PwValueRight > -121) PwValueRight -= 1;
+			} else {
+				// left motor at minimum, now accelerate right motor
+				if (PwValueRight < 122) PwValueRight += 1;
+			}
+			break;
+
+		case defDirRightBackward:
+			// decelerate right motor stronger but also decelerate left motor
+			// When minimum is reached of right motor, then only accelerate left motor	
+			if ( PwValueRight > -121)
+				PwValueRight -= 1;	
+			if ( PwValueRight > -121)
+				PwValueRight -= 1;	
+			if ( PwValueRight > -121) {
+				if (PwValueLeft > -121) PwValueLeft -= 1;
+			} else {
+				// right motor at minimum, now accelerate left motor
+				if (PwValueLeft < 122) PwValueLeft += 1;
+			}
+			break;
 	}
 
 

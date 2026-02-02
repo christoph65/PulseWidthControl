@@ -23,10 +23,10 @@ void StickReader::Initialize()
 	// Init all for the Switsches on PD2 and PD5 as Input
 	// Normally PULLUp is already enabled for all ports
 	
-	//D2, PD2 Forward (blau weiß)
+	//D2, PD2 Forward (blau weiï¿½)
 	//D3, PD3 Right (orange)
-	//D4, PD4 Left (orange weiß)
-	//D5, PD5 Backward (braun weiß)
+	//D4, PD4 Left (orange weiï¿½)
+	//D5, PD5 Backward (braun weiï¿½)
 	DDRD &= ~((1<<PIND2) | (1<<PIND3) | (1<<PIND4) | (1<<PIND5));
 	PORTD |=  (1<<PIND2) | (1<<PIND3) | (1<<PIND4) | (1<<PIND5);
 	
@@ -142,8 +142,20 @@ void StickReader::ReadSwitches()
 	StickX = 0;
 	StickY = 0;
 	
-	if (bSwitchForwardPressed)  StickY  =  40;
-	if (bSwitchBackwardPressed) StickY  = -40;
-	if (bSwitchLeftPressed)	    StickX  = -40;
-	if (bSwitchRightPressed)    StickX  =  40;
+	if (bSwitchForwardPressed)  {
+		bValueChange = true;
+		StickY  =  40;
+	}
+	if (bSwitchBackwardPressed) {
+		bValueChange = true;
+		StickY  = -40;
+	}
+	if (bSwitchLeftPressed) {
+		bValueChange = true;
+		StickX  = -40;
+	}
+	if (bSwitchRightPressed) {
+		bValueChange = true;
+		StickX  =  40;
+	}
 }

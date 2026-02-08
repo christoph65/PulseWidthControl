@@ -24,7 +24,7 @@ class StickReader {
 	void Initialize();
 	void TimerInterrupt();
 	void ReadADC();
-	bool bValueChange;
+	bool bNotInMiddlePos;
 	
 	// Both Values between -127 and 128
 	// Both Values like in X,Y coordination system like normal algebra function

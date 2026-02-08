@@ -46,7 +46,8 @@ void StickReader::Initialize()
 	bSwitchRightChange = false;
 
 
- 	bValueChange = false;
+ 	bNotInMiddlePos = false;
+	bStickMoved = false;
 }
 
 
@@ -138,24 +139,44 @@ void StickReader::ReadSwitches()
 		}
 	}
 	
-	// now set StickX and Y
-	StickX = 0;
-	StickY = 0;
-	
+	bool bStickYNotCentered = false;
+	bool bStickXNotCentered = false;
+
 	if (bSwitchForwardPressed)  {
-		bValueChange = true;
-		StickY  =  40;
+		bStickYNotCentered = true;
+		if (StickY == 0 or StickY == -40) {
+			StickY = 40;
+			bStickMoved = true;
+		}
 	}
 	if (bSwitchBackwardPressed) {
-		bValueChange = true;
-		StickY  = -40;
+		bStickYNotCentered = true;
+		if (StickY == 0 or StickY == 40) {
+			StickY = -40;
+			bStickMoved = true;
+		}
 	}
 	if (bSwitchLeftPressed) {
-		bValueChange = true;
-		StickX  = -40;
+		bStickXNotCentered = true;
+		if (StickX == 0 or StickX == 40) {
+			StickX = -40;
+			bStickMoved = true;
+		}
 	}
 	if (bSwitchRightPressed) {
-		bValueChange = true;
-		StickX  =  40;
+		bStickXNotCentered = true;
+		if (StickX == 0 or StickX == -40) {
+			StickX = 40;
+			bStickMoved = true;
+		}
+	}
+
+	if (bStickXNotCentered == false ) StickX = 0;
+	if (bStickYNotCentered == false ) StickY = 0;
+
+	if (StickX == 0 && StickY == 0) {
+		bNotInMiddlePos = false;
+	} else {
+		bNotInMiddlePos = true;
 	}
 }

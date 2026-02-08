@@ -34,7 +34,8 @@ class StickReader {
 	public:		
 	void Initialize();
 	void ReadSwitches();
-	bool bValueChange;
+	bool bNotInMiddlePos;
+	bool bStickMoved;
 	
 	// this are historical values
 	// used for an analog stick, but now changed to switches

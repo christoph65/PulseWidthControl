@@ -34,7 +34,7 @@ void StickReader::Initialize()
 	ADMUX &= ~(1 << REFS1);
 
 	iReaderState = defStep1InitX;
-	bValueChange = false;
+	bNotInMiddlePos = false;
 }
 
 void StickReader::TimerInterrupt()
@@ -126,7 +126,7 @@ void StickReader::ReadADC()
 			if (PwValueCalc16 < -127) StickY = -127;
 			
 			iReaderState = defStep1InitX;
-			bValueChange = true;
+			bNotInMiddlePos = true;
 		}
 	}
 }

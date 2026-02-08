@@ -30,8 +30,8 @@ void KeysReader::ReadKeys()
 	// Read the Keys
 	
 	// Key must remain in one position for at least 10 Cycles
-	if ((PIND & (1 << PIND7)) > 0) { // PD7 is pressed
-		if (bSwitchDownPressed == false) iSwitchDownDelay = 0;
+	if ((PIND & (1 << PIND7)) > 0) { // PD7 is released meaning bSwitchDownPressed should be false
+		if (bSwitchDownPressed == false) iSwitchDownDelay = 0; // reset counter if state is already correct
 		else iSwitchDownDelay += 1;
 		
 		if(iSwitchDownDelay >= 10) {
@@ -39,7 +39,7 @@ void KeysReader::ReadKeys()
 			bSwitchDownChange = true;
 			iSwitchDownDelay = 0;
 		}
-		} else {
+	} else { // now the opposite is the case PD7 is pressed meaning bSwitchDownPressed should be true
 		if (bSwitchDownPressed == true) iSwitchDownDelay = 0;
 		else iSwitchDownDelay += 1;
 		
@@ -59,7 +59,7 @@ void KeysReader::ReadKeys()
 			bSwitchUpChange = true;
 			iSwitchUpDelay = 0;
 		}
-		} else {
+	} else {
 		if (bSwitchUpPressed == true) iSwitchUpDelay = 0;
 		else iSwitchUpDelay += 1;
 		

@@ -34,7 +34,6 @@ StickReader stickReader;
 MotorControler motorControler;
 KeysReader keysReader;
 int iEvaluationCounter;
-int iDownButtonCounter;
 
 // The real application
 //
@@ -139,22 +138,34 @@ class Application {
 		// always coming back to STATE_WAITCOMMAND, then send ">".
 		// Will be executed with the "Enter"-Button
 		// to finish wrong Input - Press "Enter"
-		
-		const int constOneSecondDelay                	= 1000; // 3 seconds first estimate
-		const int constOneSecondDelayShortOn         	= 50; // 3 seconds first estimate
-		const int constBlinkLowLightCounterOff 			= 8;
-		const int constBlinkLowLightCounterOn 			= 3;
-		const int constBlinkHighLightCounterOff 		= 3;
-		const int constBlinkHighLightCounterOn 			= 8;
 
+		// for stick evaluation in Manual Mode and Sensitivity Change Mode
 		iEvaluationCounter = 0;
 		int iEvaluationThreshold = 5;
-		iDownButtonCounter = 0;
-		int iDownButtonThreshold = 100;
 
-		int iDelayCounter = constOneSecondDelay;
+
+
+		// for LED Blink Management
+		long longLedDelayCounterDown = 0;
 		bool bLedStateOn = true;
 		PORTB |= 0x01;
+		// used for blinking the LED in stop mode
+		const long constOneSecondDelay                	= 70000; // 1 seconds first estimate
+		const long constOneSecondDelayShortOn         	= 6000; // 0.1 seconds first estimate
+		// Delay used for LED off in QuittingSensitivityChange State
+		const long constOneSecondDelayOff             	= 50000; // 3 seconds first estimate
+		// used for blinking the LED in Manual Mode and Sensitivity Change Mode (low in man mode) 
+		const long constBlinkLowLightCounterOff 		= 16;
+		const long constBlinkLowLightCounterOn 			= 4;
+		const long constBlinkHighLightCounterOff 		= 4;
+		const long constBlinkHighLightCounterOn 		= 16;
+
+		const long constDownButtonThreshold 			= 60000; // about 1 second to press
+		long longDownButtonCounterUp = 0;
+		bool bDownButtonCountingRuns = false;
+
+
+
 
 		const int constSTATE_ManualMode                = 0;
 		const int constSTATE_Stop                      = 1;
@@ -177,10 +188,12 @@ class Application {
 			// Top Button -> go to Stop Mode from any state
 			if (keysReader.bSwitchUpChange == true && keysReader.bSwitchUpPressed == true) {
 				iActualState = constSTATE_Stop;
+				longLedDelayCounterDown = 0;
+
 				keysReader.bSwitchUpChange = false;
 				sprintf (strptr, "\r\nStpMde\r\n");
 				serialInterface.SendString(strptr);				
-				stickReader.bValueChange = false; // prepare to detect stick movement
+				stickReader.bStickMoved = false; // prepare to detect stick movement
 				// stop the motors
 				pwGenerator.PwValues[0] = 0;
 				pwGenerator.PwValues[1] = 0;
@@ -193,76 +206,127 @@ class Application {
 			{
 				case constSTATE_Stop:
 					// any stick button pressed goto Manual Mode
-					if (stickReader.bValueChange == true) {
+					if (stickReader.bStickMoved == true) {
 						iActualState = constSTATE_ManualMode;
+						longLedDelayCounterDown = 0;
+						bDownButtonCountingRuns = false;
+						longDownButtonCounterUp = 0;
+						keysReader.bSwitchDownChange = false;
+
 						iEvaluationCounter = 0;
 						// stickReader.bValueChange = false;
 						sprintf (strptr, "\r\nStp2ManMde\r\n");
 						serialInterface.SendString(strptr);
+						break;
 					}
-					if (iDelayCounter-- > 0) {
+					// in Stop Mode the LED blinks with short pulse to show we are in Stop Mode
+					if (longLedDelayCounterDown-- <= 0) {
 						if (bLedStateOn == true) {
 							// turn off after short time
 							PORTB &= 0xFE; // turn off
 							bLedStateOn = false;
-							iDelayCounter = constOneSecondDelay;
+							longLedDelayCounterDown = constOneSecondDelay;
 						} else {
 							// turn on after long time
 							PORTB |= 0x01; // turn on
 							bLedStateOn = true;
-							iDelayCounter = constOneSecondDelayShortOn;
+							longLedDelayCounterDown = constOneSecondDelayShortOn;
 						}	
-					}					
-					/* code */
+					}
+										
+					// Initialise counting if pressed for first time
+					if (keysReader.bSwitchDownChange == true && keysReader.bSwitchDownPressed == true) {
+						// button pressed and start counting
+						longDownButtonCounterUp = 0;
+						bDownButtonCountingRuns = true;
+						keysReader.bSwitchDownChange = false;
+					// if button is still pressed count up
+					} else {
+						if (keysReader.bSwitchDownPressed == true) {
+							// button still pressed so count up
+							longDownButtonCounterUp += 1;
+						} 
+					}
+
+					// Bottom Button long -> go to QuittingSensitivityChange
+					// when released after threshold -> go to QuittingSensitivityChange
+					if (longDownButtonCounterUp >= constDownButtonThreshold && bDownButtonCountingRuns == true) {
+						// if button still pressed then go to next State
+						if (keysReader.bSwitchDownPressed == true) {
+							iActualState = constSTATE_QuittingSensitivityChange;
+
+							longDownButtonCounterUp = 0;
+							bDownButtonCountingRuns = false;
+							// turn led off for about 1 seconds
+							longLedDelayCounterDown = constOneSecondDelayOff;
+							PORTB &= 0xFE; // turn off
+							bLedStateOn = false;
+
+							keysReader.bSwitchDownChange = false;
+							stickReader.bStickMoved = false;
+							sprintf (strptr, "\r\nStopMde2QuitSensChnge\r\n");
+							serialInterface.SendString(strptr);
+							break;
+						}
+					}
 					break;
 				
 				case constSTATE_ManualMode:
 				
 					// Bottom Button short -> go to External Mode
-					// must be pressed -> then iDownButtonCounter counts up
-					// when released before threshold -> go to External Mode
+					// Botto Buttong long -> go to QuittingSensitivityChange
+
+					// Initialise counting if pressed for first time
 					if (keysReader.bSwitchDownChange == true && keysReader.bSwitchDownPressed == true) {
 						// button pressed and start counting
-						iDownButtonCounter = 0;
+						longDownButtonCounterUp = 0;
+						bDownButtonCountingRuns = true;
 						keysReader.bSwitchDownChange = false;
+					// if button is still pressed count up
 					} else {
 						if (keysReader.bSwitchDownPressed == true) {
 							// button still pressed so count up
-							iDownButtonCounter += 1;
-						}
+							longDownButtonCounterUp += 1;
+						} 
 					}
 
+					
 					// Bottom Button short -> go to External Mode
 					// when released before threshold -> go to External Mode
-					if (iDownButtonCounter < iDownButtonThreshold && keysReader.bSwitchDownChange == true) {
+					if (longDownButtonCounterUp < constDownButtonThreshold && keysReader.bSwitchDownChange == true && bDownButtonCountingRuns == true	) {
 						// check if button released
 						if (keysReader.bSwitchDownPressed == false) {
 							// released before threshold -> go to External Mode
-							iDownButtonCounter = 0;
 							iActualState = constSTATE_ExternalMode;
+							longDownButtonCounterUp = 0;
+							bDownButtonCountingRuns = false;
 							keysReader.bSwitchDownChange = false;
-							stickReader.bValueChange = false;
+							stickReader.bStickMoved = false;
 							sprintf (strptr, "\r\nManMde2ExtMde\r\n");
 							serialInterface.SendString(strptr);
+							break;
 						}
 					}
 
 					// Bottom Button long -> go to QuittingSensitivityChange
 					// when released after threshold -> go to QuittingSensitivityChange
-					if (iDownButtonCounter >= iDownButtonThreshold && keysReader.bSwitchDownChange == true) {
-						// button released
-						if (keysReader.bSwitchDownPressed == false) {
-							// released after threshold -> go to QuittingSensitivityChange
-							iDownButtonCounter = 0;
+					if (longDownButtonCounterUp >= constDownButtonThreshold && bDownButtonCountingRuns == true) {
+						// if button still pressed then go to next State
+						if (keysReader.bSwitchDownPressed == true) {
 							iActualState = constSTATE_QuittingSensitivityChange;
-							iDelayCounter = constOneSecondDelay * 3;
-							// turn led off for 3 seconds
+
+							longDownButtonCounterUp = 0;
+							bDownButtonCountingRuns = false;
+							// turn led off for about 1 seconds
+							longLedDelayCounterDown = constOneSecondDelayOff;
 							PORTB &= 0xFE; // turn off
-							bLedStateOn = false;							
+							bLedStateOn = false;
+
 							keysReader.bSwitchDownChange = false;
-							stickReader.bValueChange = false;
+							stickReader.bStickMoved = false;
 							sprintf (strptr, "\r\nManMde2QuitSensChnge\r\n");
 							serialInterface.SendString(strptr);
+							break;
 						}
 					}
 					
@@ -270,22 +334,22 @@ class Application {
 					if (iEvaluationCounter > iEvaluationThreshold) {
 						iEvaluationCounter = 0;
 						// blink LED with short pulse to show we are in Sensitivity Change Mode
-						if (iDelayCounter-- <= 0) {
+						longLedDelayCounterDown -= 1;
+						if (longLedDelayCounterDown <= 0) {
 							if (bLedStateOn == true) {
 								// turn off after short time
 								PORTB &= 0xFE; // turn off
 								bLedStateOn = false;
-								iDelayCounter = constBlinkLowLightCounterOff;
+								longLedDelayCounterDown = constBlinkLowLightCounterOff;
 							} else {
 								// turn on after long time
 								PORTB |= 0x01; // turn on
 								bLedStateOn = true;
-								iDelayCounter = constBlinkLowLightCounterOn;
+								longLedDelayCounterDown = constBlinkLowLightCounterOn;
 							}	
 						}
 						// evaluate stick and set motor controler
-						if (stickReader.bValueChange == true	) {
-							stickReader.bValueChange = false;
+						if (stickReader.bNotInMiddlePos == true	) {
 							motorControler.Evaluate(stickReader.StickX,stickReader.StickY);
 						}
 					}
@@ -300,13 +364,17 @@ class Application {
 					bLedStateOn = true;
 
 					// Any Stick Movement -> go to Manual Mode
-					if (stickReader.bValueChange == true) {
+					if (stickReader.bStickMoved == true) {
 						iActualState = constSTATE_ManualMode;
+						bDownButtonCountingRuns = false;
+						longDownButtonCounterUp = 0;
+						iEvaluationCounter = 0;
 						// turn led off to show mode change
+						longLedDelayCounterDown = 0;
 						PORTB &= 0xFE; // turn off
 						bLedStateOn = false;
 						// stickReader.bValueChange = false;
-						sprintf (strptr, "\r\nFrom External to Manual Mode\r\n");
+						sprintf (strptr, "\r\nExtMod2ManMod\r\n");
 						serialInterface.SendString(strptr);
 					}
 
@@ -323,54 +391,57 @@ class Application {
 					break;
 				
 				case constSTATE_SensitivityChange:
-					// LowButton short -> go to Manual Mode
+					// LowButton pressed then go to Manual Mode
 					if (keysReader.bSwitchDownChange == true && keysReader.bSwitchDownPressed == true) {
 						keysReader.bSwitchDownChange = false;
+						longDownButtonCounterUp = 0;
+						bDownButtonCountingRuns = false;
 						iActualState = constSTATE_ManualMode;
 						// turn led off to show mode change
 						PORTB &= 0xFE; // turn off
 						bLedStateOn = false;
-						iDelayCounter = 0;
+						longLedDelayCounterDown = 0;
 						// stickReader.bValueChange = false;
-						sprintf (strptr, "\r\nFrom Sensitivity Change to Manual Mode\r\n");
+						sprintf (strptr, "\r\nSensChg2ManMod\r\n");
 						serialInterface.SendString(strptr);
+						break;
 					}
 
 					// Led blinks with long pulse to show we are in Sensitivity Change Mode
 					// and according to the stick evaluation speed
 					if (iEvaluationCounter > iEvaluationThreshold) {
 						iEvaluationCounter = 0;
-						if (iDelayCounter-- <= 0) {
+						if (longLedDelayCounterDown-- <= 0) {
 							if (bLedStateOn == true) {
 								// turn off after short time
 								PORTB &= 0xFE; // turn off
 								bLedStateOn = false;
-								iDelayCounter = constBlinkHighLightCounterOff;
+								longLedDelayCounterDown = constBlinkHighLightCounterOff;
 							} else {
 								// turn on after long time
 								PORTB |= 0x01; // turn on
 								bLedStateOn = true;
-								iDelayCounter = constBlinkHighLightCounterOn;
+								longLedDelayCounterDown = constBlinkHighLightCounterOn;
 							}	
 						}
 					}
 
 					// evaluate stick and adapt sensitivity
-					if (stickReader.bValueChange == true	) {	
-						stickReader.bValueChange = false;
+					if (stickReader.bStickMoved == true	) {	
+						stickReader.bStickMoved = false;
 						// adapt sensitivity according to stick position
 						if (stickReader.StickY > 20) {
 							// increase sensitivity
-							if (pwGenerator.PwAdjustValues[2] < 2000) {
-								pwGenerator.PwAdjustValues[2] += 10;
-								sprintf (strptr, "\r\nIncreasing Sensitivity to %d\r\n", pwGenerator.PwAdjustValues[2]);
+							if (iEvaluationThreshold < 20) {
+								iEvaluationThreshold += 1;
+								sprintf (strptr, "\r\nIncSensTo %i\r\n", iEvaluationThreshold);
 								serialInterface.SendString(strptr);
 							}
 						} else if (stickReader.StickY < -20) {
 							// decrease sensitivity
-							if (pwGenerator.PwAdjustValues[2] > 0) {
-								pwGenerator.PwAdjustValues[2] -= 10;
-								sprintf (strptr, "\r\nDecreasing Sensitivity to %d\r\n", pwGenerator.PwAdjustValues[2]);
+							if (iEvaluationThreshold > 0) {
+								iEvaluationThreshold -= 1;
+								sprintf (strptr, "\r\nDecSensTo %i\r\n", iEvaluationThreshold);
 								serialInterface.SendString(strptr);
 							}
 						}
@@ -379,22 +450,26 @@ class Application {
 				
 				case constSTATE_QuittingSensitivityChange:
 					// 3 seconds Led on then go to Sensitivity Change
-					if (iDelayCounter-- <= 0) {
+					if (longLedDelayCounterDown-- <= 0) {
 						iActualState = constSTATE_SensitivityChange	;
-						sprintf (strptr, "\r\nFrom Quitting Sensitivity Change to Sensivtivity change\r\n");
+						longLedDelayCounterDown = 0;
+						sprintf (strptr, "\r\nQuitSC2SensChg\r\n");
 						serialInterface.SendString(strptr);
-						stickReader.bValueChange = false; // prepare to detect stick movement
+						stickReader.bStickMoved = false; // prepare to detect stick movement
+						keysReader.bSwitchDownChange = false; // prepare to detect button change
+						break;
 					}
 					// Any Stick Movement -> go to Manual Mode
-					if (stickReader.bValueChange == true) {
+					if (stickReader.bStickMoved == true) {
 						iActualState = constSTATE_ManualMode;
 						// turn led off to show mode change
 						PORTB &= 0xFE; // turn off
 						bLedStateOn = false;
-						iDelayCounter = 0;
+						longLedDelayCounterDown = 0;
 						// stickReader.bValueChange = false;
-						sprintf (strptr, "\r\nFrom Quitting Sensitivity Change to Manual Mode\r\n");
+						sprintf (strptr, "\r\nQuitSC2ManMod\r\n");
 						serialInterface.SendString(strptr);
+						break;
 					}
 					break;
 				
